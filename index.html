@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+</head>
+<style>
+    body {
+        padding-top: 1em;
+        font-family: sans-serif;
+        color: #333;
+        background: linear-gradient(135deg, #8052ec, #d161ff);
+        height: 100vh;
+    }
+
+    #enemy-screen,
+    #intro-screen {
+        max-width: 420px;
+        text-align: center;
+    }
+
+    #enemy-screen h2,
+    #intro-screen h2 {
+        padding: 0 15px;
+    }
+
+    #intro-screen button {
+        font-size: 3.4em;
+        padding: 3% 6%;
+        margin: 0 4%;
+    }
+
+    #enemy-screen button {
+        display: block;
+        margin: 0.6em auto;
+        font-size: 1.9em;
+        padding: 0.2em 0.4em;
+    }
+
+    table {
+        max-width: 420px;
+        max-height: 420px;
+        width: 85vw;
+        height: 85vw;
+        border-spacing: 10px 10px;
+    }
+
+    td {
+        padding: 0;
+        width: 33%;
+        height: 33%;
+    }
+
+    .cell {
+        font-size: 3.4em;
+        font-size: 16vmin;
+        height: 100%;
+        width: 100%;
+    }
+
+    .wincell {
+        background-color: #c88;
+    }
+
+    .player-two {
+        color: #933;
+    }
+
+    button {
+        cursor: pointer;
+        border: none;
+        color: linear-gradient(135deg, #8052ec, #d161ff);
+        ;
+    }
+
+    #restart {
+        font-size: 1.2em;
+        padding: 5px 10px;
+        margin: 20px auto;
+        display: block;
+    }
+
+    .choose,
+    #restart {
+        border-radius: 0.3em;
+    }
+
+    .choose:active,
+    #restart:active {
+        background-color: #ccc;
+    }
+
+    .btn-green {
+        background-color: rgb(220, 150, 255);
+    }
+
+    .btn-green:active {
+        background-color: rgb(220, 150, 255) !important;
+    }
+
+    .center {
+        margin: 0 auto;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    .cannotuse {
+        cursor: not-allowed;
+    }
+</style>
+
+<body>
+    <div id="intro-screen" class="center">
+        <h2>Choose your symbol:</h2>
+        <button type="button" id="choose-x" class="choose">X</button>
+        <button type="button" id="choose-o" class="choose">O</button>
+    </div>
+
+    <div id="enemy-screen" class="center hidden">
+        <h2>Play against:</h2>
+        <button type="button" id="choose-human" class="choose">Human</button>
+        <button type="button" id="choose-cpu" class="choose">CPU</button>
+    </div>
+
+    <div id="game-screen" class="center hidden">
+        <table class="center">
+            <tr>
+                <td>
+                    <button type="button" class="cell" id="cell00"></button>
+                </td>
+                <td>
+                    <button type="button" class="cell" id="cell01"></button>
+                </td>
+                <td>
+                    <button type="button" class="cell" id="cell02"></button>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <button type="button" class="cell" id="cell10"></button>
+                </td>
+                <td>
+                    <button type="button" class="cell" id="cell11"></button>
+                </td>
+                <td>
+                    <button type="button" class="cell" id="cell12"></button>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <button type="button" class="cell" id="cell20"></button>
+                </td>
+                <td>
+                    <button type="button" class="cell" id="cell21"></button>
+                </td>
+                <td>
+                    <button type="button" class="cell" id="cell22"></button>
+                </td>
+            </tr>
+        </table>
+        <button type="button" id="restart">Restart</button>
+    </div>
+    <script>
+        var playerSymbol;
+        var enemySymbol;
+        var win;
+        var turn;
+        var row, column;
+        var cpuEnabled = true;
+
+        $(document).ready(function () {
+            $("#choose-x").on("click", function () {
+                playerSymbol = "X";
+                enemySymbol = "O";
+                $("#intro-screen").fadeOut(300, showEnemyScreen);
+            });
+            $("#choose-o").on("click", function () {
+                playerSymbol = "O";
+                enemySymbol = "X";
+                $("#intro-screen").fadeOut(300, showEnemyScreen);
+            });
+
+
+            $("#choose-human").on("click", function () {
+                cpuEnabled = false;
+                startGame();
+            });
+            $("#choose-cpu").on("click", function () {
+                cpuEnabled = true;
+                startGame();
+            });
+
+
+            $("#restart").on("click", function () {
+                restartGame();
+            });
+            $(".cell").on("click", function () {
+
+                if (!win && this.innerHTML === "") {
+                    if (turn % 2 === 0) {
+
+                        insertSymbol(this, playerSymbol);
+                    } else {
+
+                        insertSymbol(this, enemySymbol);
+                    }
+                }
+            });
+        });
+
+
+        function insertSymbol(element, symbol) {
+            element.innerHTML = symbol;
+
+            if (symbol === enemySymbol) $("#" + element.id).addClass("player-two");
+            $("#" + element.id).addClass("cannotuse");
+
+            checkWinConditions(element);
+            turn++;
+
+            if (win || turn > 8) {
+                $("#restart").addClass("btn-green");
+                $(".cell").addClass("cannotuse");
+            } else if (cpuEnabled && turn % 2 !== 0) {
+                cpuTurn();
+            }
+        }
+
+
+        function startGame() {
+
+            $("#enemy-screen").fadeOut(300, showGameScreen);
+            restartGame();
+        }
+        function showGameScreen() {
+            $("#game-screen").fadeIn(300);
+        }
+        function showEnemyScreen() {
+            $("#enemy-screen").fadeIn(300);
+        }
+
+
+        function restartGame() {
+            turn = 0;
+            win = false;
+            $(".cell").text("");
+            $(".cell").removeClass("wincell");
+            $(".cell").removeClass("cannotuse");
+            $(".cell").removeClass("player-two");
+            $("#restart").removeClass("btn-green");
+        }
+
+
+        function checkWinConditions(element) {
+
+            row = element.id[4];
+            column = element.id[5];
+
+            win = true;
+            for (var i = 0; i < 3; i++) {
+                if ($("#cell" + i + column).text() !== element.innerHTML) {
+                    win = false;
+                }
+            }
+            if (win) {
+                for (var i = 0; i < 3; i++) {
+
+                    $("#cell" + i + column).addClass("wincell");
+                }
+                return;
+            }
+
+
+            win = true;
+            for (var i = 0; i < 3; i++) {
+                if ($("#cell" + row + i).text() !== element.innerHTML) {
+                    win = false;
+                }
+            }
+            if (win) {
+                for (var i = 0; i < 3; i++) {
+                    $("#cell" + row + i).addClass("wincell");
+                }
+                return;
+            }
+
+
+            win = true;
+            for (var i = 0; i < 3; i++) {
+                if ($("#cell" + i + i).text() !== element.innerHTML) {
+                    win = false;
+                }
+            }
+            if (win) {
+                for (var i = 0; i < 3; i++) {
+                    $("#cell" + i + i).addClass("wincell");
+                }
+                return;
+            }
+
+
+            win = false;
+            if ($("#cell02").text() === element.innerHTML) {
+                if ($("#cell11").text() === element.innerHTML) {
+                    if ($("#cell20").text() === element.innerHTML) {
+                        win = true;
+                        $("#cell02").addClass("wincell");
+                        $("#cell11").addClass("wincell");
+                        $("#cell20").addClass("wincell");
+                    }
+                }
+            }
+        }
+
+
+        function cpuTurn() {
+            var ok = false;
+
+            while (!ok) {
+                row = Math.floor(Math.random() * 3);
+                column = Math.floor(Math.random() * 3);
+                if ($("#cell" + row + column).text() === "") {
+
+                    ok = true;
+                }
+            }
+
+            $("#cell" + row + column).click();
+        }
+
+    </script>
+
+</body>
+
+</html>
